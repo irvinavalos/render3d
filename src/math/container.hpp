@@ -14,26 +14,26 @@ namespace math {
   public:
     constexpr container() noexcept = default;
     constexpr explicit container(T x, T y, T z, T w) noexcept
-        : items{x, y, z, w} {}
+        : m_items{x, y, z, w} {}
 
     [[nodiscard]] constexpr bool is_vector() const noexcept {
-      return items[index::w] == 0.0;
+      return m_items[index::w] == 0.0;
     }
 
     [[nodiscard]] constexpr bool is_point() const noexcept {
       return !(is_vector());
     }
 
-    [[nodiscard]] constexpr T x() const noexcept { return items[index::x]; }
-    [[nodiscard]] constexpr T y() const noexcept { return items[index::y]; }
-    [[nodiscard]] constexpr T z() const noexcept { return items[index::z]; }
-    [[nodiscard]] constexpr T w() const noexcept { return items[index::w]; }
+    [[nodiscard]] constexpr T x() const noexcept { return m_items[index::x]; }
+    [[nodiscard]] constexpr T y() const noexcept { return m_items[index::y]; }
+    [[nodiscard]] constexpr T z() const noexcept { return m_items[index::z]; }
+    [[nodiscard]] constexpr T w() const noexcept { return m_items[index::w]; }
 
-    [[nodiscard]] constexpr T operator[](index i) const noexcept {
-      return items[i];
+    [[nodiscard]] constexpr T operator[](int i) const noexcept {
+      return m_items[i];
     }
 
-    [[nodiscard]] constexpr T& operator[](index i) noexcept { return items[i]; }
+    [[nodiscard]] constexpr T& operator[](int i) noexcept { return m_items[i]; }
 
     [[nodiscard]] constexpr bool
     operator==(const container& rhs) const noexcept {
@@ -42,7 +42,7 @@ namespace math {
     }
 
   private:
-    std::array<T, 4> items;
+    std::array<T, 4> m_items;
   };
 
 } // namespace math
