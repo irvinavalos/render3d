@@ -1,8 +1,10 @@
 #ifndef MATH_GEOMETRY_HPP
 #define MATH_GEOMETRY_HPP
 
+#include "matrix.hpp"
 #include "point3.hpp"
 #include "vec3.hpp"
+#include <stdexcept>
 
 namespace math {
   template <typename T>
@@ -23,6 +25,138 @@ namespace math {
     auto y_hat = v1.z() * v2.x() - v1.x() * v2.z();
     auto z_hat = v1.x() * v2.y() - v1.y() * v2.x();
     return vec3(x_hat, y_hat, z_hat);
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> ident_matrix(int dim) {
+    // clang-format off
+      if (dim == 2) {
+        return matrix({{1.0, 0.0},
+                       {0.0, 1.0}});
+      } else if (dim == 3) {
+        return matrix({{1.0, 0.0, 0.0},
+                       {0.0, 1.0, 0.0},
+                       {0.0, 0.0, 1.0}});
+      } else if (dim == 4) {
+        return matrix({{1.0, 0.0, 0.0, 0.0},
+                       {0.0, 1.0, 0.0, 0.0},
+                       {0.0, 0.0, 1.0, 0.0},
+                       {0.0, 0.0, 0.0, 1.0}});
+      } else {
+        throw std::invalid_argument(
+            "\nERROR: identity matrix must be one of\n(1) 2x2\n(2) 3x3\n(3) 4x4"
+            );
+      }
+    // clang-format on
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> transpose(const matrix<T>& A) noexcept {
+    matrix<T> M = A;
+    for (int r{}; r < A.rows(); ++r) {
+      for (int c{r}; c < A.cols(); ++c) {
+        auto temp = M(r, c);
+        M(r, c) = M(c, r);
+        M(c, r) = temp;
+      }
+    }
+    return M;
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr T determinant(const matrix<T>& M);
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> submatrix(const matrix<T>& A, int row,
+                                              int col);
+
+  template <typename T>
+  [[nodiscard]] constexpr T minor(const matrix<T>& A, int row, int col);
+
+  template <typename T>
+  [[nodiscard]] constexpr T cofactor(const matrix<T>& A, int row, int col);
+
+  template <typename T> constexpr T determinant(const matrix<T>& M) {
+    T det{};
+
+    if (M.rows() == 2) {
+      det = M(0, 0) * M(1, 1) - M(1, 0) * M(0, 1);
+    } else {
+      for (int c{}; c < M.cols(); ++c) {
+        det += M(0, c) * cofactor(M, 0, c);
+      }
+    }
+
+    return det;
+  }
+
+  template <typename T>
+  constexpr matrix<T> submatrix(const matrix<T>& A, int row, int col) {
+    if (A.rows() == 2) {
+      throw std::invalid_argument(
+          "\nERROR: input matrix must have dimension (3x3) or (4x4)\n"
+          "Current matrix dimension is (2x2)");
+    }
+
+    matrix<T> M;
+
+    if (A.rows() == 3) {
+      M = matrix<T>(2, 2);
+    } else {
+      M = matrix<T>(3, 3);
+    }
+
+    int ret_row{0};
+    for (int r{}; r < A.rows(); ++r) {
+      int ret_col{0};
+      if (r == row) // skip the r^th row
+        continue;
+      for (int c{}; c < A.cols(); ++c) {
+        if (c == col) // skip the c^th column
+          continue;
+        M(ret_row, ret_col) = A(r, c);
+        ret_col += 1;
+      }
+      ret_row += 1;
+    }
+
+    return M;
+  }
+
+  template <typename T>
+  constexpr T minor(const matrix<T>& A, int row, int col) {
+    auto B = submatrix(A, row, col);
+    return determinant(B);
+  }
+
+  template <typename T>
+  constexpr T cofactor(const matrix<T>& A, int row, int col) {
+    int sign = ((row + col) & 1) ? -1 : 1; // check parity
+    return sign * minor(A, row, col);
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr bool is_invertible(const matrix<T>& A) {
+    return determinant(A) != 0;
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> inverse(const matrix<T>& A) {
+    if (!is_invertible(A)) {
+      throw std::invalid_argument(
+          "\nERROR: trying to find the inverse of a noninvertible matrix");
+    }
+
+    matrix<T> M(A.rows(), A.cols());
+    auto det_A = determinant(A);
+
+    for (int r{}; r < A.rows(); ++r) {
+      for (int c{}; c < A.cols(); ++c) {
+        M(c, r) = cofactor(A, r, c) / det_A;
+      }
+    }
+
+    return M;
   }
 
   template <typename T>
@@ -97,6 +231,62 @@ namespace math {
   [[nodiscard]] constexpr point3<T> operator/(const point3<T>& p,
                                               T scalar) noexcept {
     return p * (1.0 / scalar);
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> operator*(const matrix<T>& A,
+                                              const matrix<T>& B) {
+    if (A.rows() != B.rows() || A.cols() != B.cols()) {
+      throw std::invalid_argument(
+          std::format("\nERROR: trying to multiply unequal matrices\ndims(LHS) "
+                      "= ({}, {})\tdims(RHS) = ({}, {})",
+                      A.rows(), A.cols(), B.rows(), B.cols()));
+    }
+
+    const auto rows = A.rows();
+    const auto cols = B.cols();
+
+    matrix<T> M(rows, cols);
+
+    for (int r{}; r < rows; ++r) {
+      for (int c{}; c < cols; ++c) {
+        auto cur_sum = 0.0;
+        for (int k{}; k < A.cols(); ++k) { // A.cols == B.rows
+          cur_sum += A(r, k) * B(k, c);
+        }
+        M(r, c) = cur_sum;
+      }
+    }
+
+    return M;
+  };
+
+  template <typename T>
+  [[nodiscard]] constexpr container<T> operator*(const matrix<T>& A,
+                                                 const container<T>& x) {
+
+    const auto rows = A.rows();
+    const auto cols = A.cols();
+
+    if (cols != x.size()) {
+      throw std::invalid_argument(
+          std::format("\nERROR: trying to multiply a matrix and container with "
+                      "unequal dimensions\ndims(MATRIX) "
+                      "= ({}, {})\tdims(CONTAINER) = ({}, 1)",
+                      rows, cols, x.size()));
+    }
+
+    container<T> b{};
+
+    for (int r{}; r < rows; ++r) {
+      auto sum = 0.0;
+      for (int c{}; c < cols; ++c) {
+        sum += A(r, c) * x[c];
+      }
+      b[r] = sum;
+    }
+
+    return b;
   }
 } // namespace math
 

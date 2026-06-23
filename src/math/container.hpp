@@ -29,6 +29,8 @@ namespace math {
     [[nodiscard]] constexpr T z() const noexcept { return m_items[index::z]; }
     [[nodiscard]] constexpr T w() const noexcept { return m_items[index::w]; }
 
+    [[nodiscard]] constexpr int size() const noexcept { return 4; }
+
     [[nodiscard]] constexpr T operator[](int i) const noexcept {
       return m_items[i];
     }
@@ -42,7 +44,7 @@ namespace math {
     }
 
   private:
-    std::array<T, 4> m_items;
+    std::array<T, 4> m_items{};
   };
 
 } // namespace math

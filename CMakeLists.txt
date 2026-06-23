@@ -10,7 +10,7 @@ target_include_directories(render3d_lib PUBLIC src)
 add_executable(main src/main.cpp)
 target_link_libraries(main PRIVATE render3d_lib)
 
-add_executable(tests tests/src/main.cpp tests/src/math_test.cpp tests/src/colors_test.cpp tests/src/canvas_test.cpp)
+add_executable(tests tests/src/main.cpp tests/src/math_test.cpp tests/src/colors_test.cpp tests/src/canvas_test.cpp tests/src/matrix_test.cpp)
 target_link_libraries(tests PRIVATE render3d_lib)
 target_include_directories(tests PRIVATE external/doctest)
 
