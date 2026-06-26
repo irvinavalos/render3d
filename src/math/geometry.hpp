@@ -4,6 +4,7 @@
 #include "matrix.hpp"
 #include "point3.hpp"
 #include "vec3.hpp"
+
 #include <stdexcept>
 
 namespace math {
@@ -25,29 +26,6 @@ namespace math {
     auto y_hat = v1.z() * v2.x() - v1.x() * v2.z();
     auto z_hat = v1.x() * v2.y() - v1.y() * v2.x();
     return vec3(x_hat, y_hat, z_hat);
-  }
-
-  template <typename T>
-  [[nodiscard]] constexpr matrix<T> ident_matrix(int dim) {
-    // clang-format off
-      if (dim == 2) {
-        return matrix({{1.0, 0.0},
-                       {0.0, 1.0}});
-      } else if (dim == 3) {
-        return matrix({{1.0, 0.0, 0.0},
-                       {0.0, 1.0, 0.0},
-                       {0.0, 0.0, 1.0}});
-      } else if (dim == 4) {
-        return matrix({{1.0, 0.0, 0.0, 0.0},
-                       {0.0, 1.0, 0.0, 0.0},
-                       {0.0, 0.0, 1.0, 0.0},
-                       {0.0, 0.0, 0.0, 1.0}});
-      } else {
-        throw std::invalid_argument(
-            "\nERROR: identity matrix must be one of\n(1) 2x2\n(2) 3x3\n(3) 4x4"
-            );
-      }
-    // clang-format on
   }
 
   template <typename T>
@@ -157,6 +135,68 @@ namespace math {
     }
 
     return M;
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> translation(T x, T y, T z) noexcept {
+    return matrix<T>({{1.0, 0.0, 0.0, x},
+                      {0.0, 1.0, 0.0, y},
+                      {0.0, 0.0, 1.0, z},
+                      {0.0, 0.0, 0.0, 1.0}});
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> scaling(T x, T y, T z) noexcept {
+    return matrix<T>({{x, 0.0, 0.0, 0.0},
+                      {0.0, y, 0.0, 0.0},
+                      {0.0, 0.0, z, 0.0},
+                      {0.0, 0.0, 0.0, 1.0}});
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> rotation_x(T theta) noexcept {
+    // | 1.0    0.0         0.0     0.0 |
+    // | 0.0 cos(theta) -sin(theta) 0.0 |
+    // | 0.0 sin(theta)  cos(theta) 0.0 |
+    // | 0.0    0.0         0.0     1.0 |
+    return matrix<T>({{1.0, 0.0, 0.0, 0.0},
+                      {0.0, std::cos(theta), -std::sin(theta), 0.0},
+                      {0.0, std::sin(theta), std::cos(theta), 0.0},
+                      {0.0, 0.0, 0.0, 1.0}});
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> rotation_y(T theta) noexcept {
+    // | cos(theta) 0.0  -sin(theta)  0.0 |
+    // |    0.0     1.0     0.0       0.0 |
+    // | sin(theta) 0.0   cos(theta)  0.0 |
+    // |    0.0     0.0     0.0       1.0 |
+    return matrix<T>({{std::cos(theta), 0.0, std::sin(theta), 0.0},
+                      {0.0, 1.0, 0.0, 0.0},
+                      {-std::sin(theta), 0.0, std::cos(theta), 0.0},
+                      {0.0, 0.0, 0.0, 1.0}});
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T> rotation_z(T theta) noexcept {
+    // | cos(theta)    -sin(theta)    0.0     0.0 |
+    // | sin(theta)     cos(theta)    0.0     0.0 |
+    // |    0.0             0.0       1.0     0.0 |
+    // |    0.0             0.0       0.0     1.0 |
+    return matrix<T>({{std::cos(theta), -std::sin(theta), 0.0, 0.0},
+                      {std::sin(theta), std::cos(theta), 0.0, 0.0},
+                      {0.0, 0.0, 1.0, 0.0},
+                      {0.0, 0.0, 0.0, 1.0}});
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr matrix<T>
+  shearing(T x_prop_y = 0.0, T x_prop_z = 0.0, T y_prop_x = 0.0,
+           T y_prop_z = 0.0, T z_prop_x = 0.0, T z_prop_y = 0.0) noexcept {
+    return matrix<T>({{1.0, x_prop_y, x_prop_z, 0.0},
+                      {y_prop_x, 1.0, y_prop_z, 0.0},
+                      {z_prop_x, z_prop_y, 1.0, 0.0},
+                      {0.0, 0.0, 0.0, 1.0}});
   }
 
   template <typename T>
@@ -287,6 +327,13 @@ namespace math {
     }
 
     return b;
+  }
+
+  template <typename T>
+  [[nodiscard]] constexpr point3<T> operator*(const matrix<T>& A,
+                                              const point3<T>& p) {
+    container<T> res = A * static_cast<container<T>>(p);
+    return point3<T>(res.x(), res.y(), res.z());
   }
 } // namespace math
 

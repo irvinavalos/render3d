@@ -114,13 +114,13 @@ TEST_CASE("multiplying a matrix by the identity matrix") {
       {4.0, 8.0, 16.0, 32.0},
   });
 
-  CHECK_EQ(A * math::ident_matrix<double>(4), A);
+  CHECK_EQ(A * math::matrix<double>::identity(4), A);
 }
 
 TEST_CASE("multiplying the identity matrix by a container") {
   math::container c(1.0, 2.0, 3.0, 4.0);
 
-  CHECK_EQ(math::ident_matrix<double>(4) * c, c);
+  CHECK_EQ(math::matrix<double>::identity(4) * c, c);
 }
 
 TEST_CASE("transposing a matrix") {
@@ -297,7 +297,7 @@ TEST_CASE("multiplying a matrix product by its inverse") {
 }
 
 TEST_CASE("inverting the identity matrix") {
-  auto I = math::ident_matrix<double>(4);
+  auto I = math::matrix<double>::identity(4);
 
   CHECK_EQ(math::inverse(I), I);
 }
@@ -306,7 +306,7 @@ TEST_CASE("multiplying a matrix by its inverse") {
   math::matrix<double> A(
       {{-1.0, 2.0, -3.0}, {4.0, -5.0, 6.0}, {7.0, 8.0, 9.0}});
 
-  CHECK_EQ(A * math::inverse(A), math::ident_matrix<double>(3));
+  CHECK_EQ(A * math::inverse(A), math::matrix<double>::identity(3));
 }
 
 TEST_CASE("inverse of the transpose of a matrix") {
@@ -318,10 +318,187 @@ TEST_CASE("inverse of the transpose of a matrix") {
 }
 
 TEST_CASE("scaling a container via the identity matrix") {
-  auto I = math::ident_matrix<double>(4);
+  auto I = math::matrix<double>::identity(4);
   I(2, 2) = 3.1;
 
   math::container x(1.0, 1.0, 1.0, 1.0);
 
   CHECK_EQ(I * x, math::container(1.0, 1.0, 3.1, 1.0));
+}
+
+TEST_CASE("multiplying by a translation matrix") {
+  auto T = math::translation(5.0, -3.0, 2.0);
+  auto p = math::point3(-3.0, 4.0, 5.0);
+
+  CHECK_EQ(T * p, math::point3(2.0, 1.0, 7.0));
+}
+
+TEST_CASE("multiplying by the inverse of a translation matrix") {
+  auto T = math::translation(5.0, -3.0, 2.0);
+  auto T_inv = math::inverse(T);
+  auto p = math::point3(-3.0, 4.0, 5.0);
+
+  CHECK_EQ(T_inv * p, math::point3(-8.0, 7.0, 3.0));
+}
+
+TEST_CASE("translation should not affect vectors") {
+  auto T = math::translation(5.0, -3.0, 2.0);
+  auto v = math::vec3(-3.0, 4.0, 5.0);
+
+  CHECK_EQ(T * v, v);
+}
+
+TEST_CASE("applying a scaling matrix to a point") {
+  auto T = math::scaling(2.0, 3.0, 4.0);
+  auto p = math::point3(-4.0, 6.0, 8.0);
+
+  CHECK_EQ(T * p, math::point3(-8.0, 18.0, 32.0));
+}
+
+TEST_CASE("applying a scaling matrix to a vector") {
+  auto T = math::scaling(2.0, 3.0, 4.0);
+  auto v = math::vec3(-4.0, 6.0, 8.0);
+
+  CHECK_EQ(T * v, math::vec3(-8.0, 18.0, 32.0));
+}
+
+TEST_CASE("multiplying the inverse of a scaling matrix to a vector") {
+  auto T = math::scaling(2.0, 3.0, 4.0);
+  auto T_inv = math::inverse(T);
+  auto v = math::vec3(-4.0, 6.0, 8.0);
+
+  CHECK_EQ(T_inv * v, math::vec3(-2.0, 2.0, 2.0));
+}
+
+TEST_CASE("reflection is scaling by the negative value") {
+  auto T = math::scaling(-1.0, 1.0, 1.0);
+  auto v = math::vec3(-4.0, 6.0, 8.0);
+
+  CHECK_EQ(T * v, math::vec3(4.0, 6.0, 8.0));
+}
+
+TEST_CASE("rotating a point around the x-axis") {
+  auto p = math::point3(0.0, 1.0, 0.0);
+
+  auto half_quarter = math::rotation_x(math::PI / 4.0);
+  auto full_quarter = math::rotation_x(math::PI / 2.0);
+
+  CHECK_EQ(half_quarter * p,
+           math::point3(0.0, std::sqrt(2.0) / 2.0, std::sqrt(2.0) / 2.0));
+
+  CHECK_EQ(full_quarter * p, math::point3(0.0, 0.0, 1.0));
+}
+
+TEST_CASE("the inverse of an x-rotation rotates in the opposite direction") {
+  auto p = math::point3(0.0, 1.0, 0.0);
+
+  auto half_quarter = math::rotation_x(math::PI / 4.0);
+  auto half_quarter_inv = math::inverse(half_quarter);
+
+  CHECK_EQ(half_quarter_inv * p,
+           math::point3(0.0, std::sqrt(2.0) / 2.0, -std::sqrt(2.0) / 2.0));
+}
+
+TEST_CASE("rotating a point around the y-axis") {
+  auto p = math::point3(0.0, 0.0, 1.0);
+
+  auto half_quarter = math::rotation_y(math::PI / 4.0);
+  auto full_quarter = math::rotation_y(math::PI / 2.0);
+
+  CHECK_EQ(half_quarter * p,
+           math::point3(std::sqrt(2.0) / 2.0, 0.0, std::sqrt(2.0) / 2.0));
+
+  CHECK_EQ(full_quarter * p, math::point3(1.0, 0.0, 0.0));
+}
+
+TEST_CASE("rotating a point around the z-axis") {
+  auto p = math::point3(0.0, 1.0, 0.0);
+
+  auto half_quarter = math::rotation_z(math::PI / 4.0);
+  auto full_quarter = math::rotation_z(math::PI / 2.0);
+
+  CHECK_EQ(half_quarter * p,
+           math::point3(-std::sqrt(2.0) / 2.0, std::sqrt(2.0) / 2.0, 0.0));
+
+  CHECK_EQ(full_quarter * p, math::point3(-1.0, 0.0, 0.0));
+}
+
+TEST_CASE("a shearing transformation moves x in proportion to y") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(1.0);
+
+  CHECK_EQ(T * p, math::point3(5.0, 3.0, 4.0));
+}
+
+TEST_CASE("a shearing transformation moves x in proportion to z") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(0.0, 1.0);
+
+  CHECK_EQ(T * p, math::point3(6.0, 3.0, 4.0));
+}
+
+TEST_CASE("a shearing transformation moves y in proportion to x") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(0.0, 0.0, 1.0);
+
+  CHECK_EQ(T * p, math::point3(2.0, 5.0, 4.0));
+}
+
+TEST_CASE("a shearing transformation moves y in proportion to z") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(0.0, 0.0, 0.0, 1.0);
+
+  CHECK_EQ(T * p, math::point3(2.0, 7.0, 4.0));
+}
+
+TEST_CASE("a shearing transformation moves z in proportion to x") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(0.0, 0.0, 0.0, 0.0, 1.0);
+
+  CHECK_EQ(T * p, math::point3(2.0, 3.0, 6.0));
+}
+
+TEST_CASE("a shearing transformation moves z in proportion to y") {
+  auto p = math::point3(2.0, 3.0, 4.0);
+  auto T = math::shearing(0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+
+  CHECK_EQ(T * p, math::point3(2.0, 3.0, 7.0));
+}
+
+TEST_CASE("individual transformations are applied in sequence") {
+  auto p = math::point3(1.0, 0.0, 1.0);
+  auto A = math::rotation_x(math::PI / 2.0);
+  auto B = math::scaling(5.0, 5.0, 5.0);
+  auto C = math::translation(10.0, 5.0, 7.0);
+
+  auto p2 = A * p;
+
+  CHECK_EQ(p2, math::point3(1.0, -1.0, 0.0));
+
+  auto p3 = B * p2;
+
+  CHECK_EQ(p3, math::point3(5.0, -5.0, 0.0));
+
+  auto p4 = C * p3;
+  CHECK_EQ(p4, math::point3(15.0, 0.0, 7.0));
+}
+
+TEST_CASE("chained transformations must be applied in reverse order") {
+  auto p = math::point3(1.0, 0.0, 1.0);
+  auto A = math::rotation_x(math::PI / 2.0);
+  auto B = math::scaling(5.0, 5.0, 5.0);
+  auto C = math::translation(10.0, 5.0, 7.0);
+  auto T = C * B * A;
+
+  CHECK_EQ(T * p, math::point3(15.0, 0.0, 7.0));
+}
+
+TEST_CASE("concatenating transformation matrices") {
+  auto p = math::point3(1.0, 0.0, 1.0);
+  auto T = math::matrix<double>::identity(4)
+               .translate(10.0, 5.0, 7.0)
+               .scale(5.0, 5.0, 5.0)
+               .rotate_x(math::PI / 2.0);
+
+  CHECK_EQ(T * p, math::point3(15.0, 0.0, 7.0));
 }

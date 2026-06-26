@@ -77,6 +77,90 @@ namespace math {
       }
     }
 
+    [[nodiscard]] static constexpr matrix identity(int dim) {
+      // clang-format off
+      if (dim == 2) {
+        return matrix({{1.0, 0.0},
+                       {0.0, 1.0}});
+      } else if (dim == 3) {
+        return matrix({{1.0, 0.0, 0.0},
+                       {0.0, 1.0, 0.0},
+                       {0.0, 0.0, 1.0}});
+      } else if (dim == 4) {
+        return matrix({{1.0, 0.0, 0.0, 0.0},
+                       {0.0, 1.0, 0.0, 0.0},
+                       {0.0, 0.0, 1.0, 0.0},
+                       {0.0, 0.0, 0.0, 1.0}});
+      } else {
+        throw std::invalid_argument(
+            "\nERROR: identity matrix must be one of\n(1) 2x2\n(2) 3x3\n(3) 4x4"
+            );
+      }
+      // clang-format on
+    }
+
+    constexpr matrix& translate(T x, T y, T z) {
+      (*this) = (*this) * matrix({{1.0, 0.0, 0.0, x},
+                                  {0.0, 1.0, 0.0, y},
+                                  {0.0, 0.0, 1.0, z},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
+    constexpr matrix& scale(T x, T y, T z) {
+      (*this) = (*this) * matrix({{x, 0.0, 0.0, 0.0},
+                                  {0.0, y, 0.0, 0.0},
+                                  {0.0, 0.0, z, 0.0},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
+    constexpr matrix& rotate_x(T deg) {
+      // | 1.0    0.0         0.0     0.0 |
+      // | 0.0 cos(theta) -sin(theta) 0.0 |
+      // | 0.0 sin(theta)  cos(theta) 0.0 |
+      // | 0.0    0.0         0.0     1.0 |
+      (*this) = (*this) * matrix({{1.0, 0.0, 0.0, 0.0},
+                                  {0.0, std::cos(deg), -std::sin(deg), 0.0},
+                                  {0.0, std::sin(deg), std::cos(deg), 0.0},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
+    constexpr matrix& rotate_y(T deg) {
+      // | cos(theta) 0.0  -sin(theta)  0.0 |
+      // |    0.0     1.0     0.0       0.0 |
+      // | sin(theta) 0.0   cos(theta)  0.0 |
+      // |    0.0     0.0     0.0       1.0 |
+      (*this) = (*this) * matrix({{std::cos(deg), 0.0, std::sin(deg), 0.0},
+                                  {0.0, 1.0, 0.0, 0.0},
+                                  {-std::sin(deg), 0.0, std::cos(deg), 0.0},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
+    constexpr matrix& rotate_z(T deg) {
+      // | cos(theta)    -sin(theta)    0.0     0.0 |
+      // | sin(theta)     cos(theta)    0.0     0.0 |
+      // |    0.0             0.0       1.0     0.0 |
+      // |    0.0             0.0       0.0     1.0 |
+      (*this) = (*this) * matrix({{std::cos(deg), -std::sin(deg), 0.0, 0.0},
+                                  {std::sin(deg), std::cos(deg), 0.0, 0.0},
+                                  {0.0, 0.0, 1.0, 0.0},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
+    constexpr matrix& shearing(T x_prop_y = 0.0, T x_prop_z = 0.0,
+                               T y_prop_x = 0.0, T y_prop_z = 0.0,
+                               T z_prop_x = 0.0, T z_prop_y = 0.0) {
+      (*this) = (*this) * matrix({{1.0, x_prop_y, x_prop_z, 0.0},
+                                  {y_prop_x, 1.0, y_prop_z, 0.0},
+                                  {z_prop_x, z_prop_y, 1.0, 0.0},
+                                  {0.0, 0.0, 0.0, 1.0}});
+      return *this;
+    }
+
     [[nodiscard]] constexpr int rows() const noexcept { return m_rows; }
     [[nodiscard]] constexpr int cols() const noexcept { return m_cols; }
 
